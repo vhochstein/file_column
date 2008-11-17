@@ -87,10 +87,13 @@ module FileColumn
       # This validation requires RMagick to be installed on your system
       # to check the image's size.
       def validates_image_size(*attrs)
-        options = attrs.pop if attrs.last.is_a?Hash
-        raise ArgumentError, "Please include a :min option." if !options || !options[:min]
-        minimums = options[:min].scan(IMAGE_SIZE_REGEXP).first.collect{|n| n.to_i} rescue []
-        raise ArgumentError, "Invalid value for option :min (should be 'XXxYY')" unless minimums.size == 2
+        options = attrs.pop if attrs.last.is_a? Hash
+        raise ArgumentError, "Please include a :max, :min or :fix option." if ([:max, :min, :fix] & (options||{}).keys).empty?
+        options[:max] = options[:min] = options[:fix] if options[:fix]
+        minimums = options[:min].scan(IMAGE_SIZE_REGEXP).first.collect{ |n| n.to_i } rescue nil
+        raise ArgumentError, "Invalid value for option :min (should be 'XXxYY')" unless minimums.size == 2 if minimums.is_a? Array
+        maximums = options[:max].scan(IMAGE_SIZE_REGEXP).first.collect{ |n| n.to_i } rescue nil
+        raise ArgumentError, "Invalid value for option :max (should be 'XXxYY')" unless maximums.size == 2 if maximums.is_a? Array
 
         require 'RMagick'
 
@@ -98,9 +101,12 @@ module FileColumn
           unless value.blank?
             begin
               img = ::Magick::Image::read(value).first
-              record.errors.add('image', "is too small, must be at least #{minimums[0]}x#{minimums[1]}") if ( img.rows < minimums[1] || img.columns < minimums[0] )
+              record.errors.add(attr, "is too narrow, must be at least #{minimums[0]}px.") if minimums && img.columns < minimums[0]
+              record.errors.add(attr, "is too short, must be at least #{minimums[1]}px.")  if minimums && img.rows    < minimums[1]
+              record.errors.add(attr, "is too wide, must be at most #{maximums[0]}px.")    if maximums && img.columns > maximums[0]
+              record.errors.add(attr, "is too tall, must be at most #{maximums[1]}px.")    if maximums && img.rows    > maximums[1]
             rescue ::Magick::ImageMagickError
-              record.errors.add('image', "invalid image")
+              record.errors.add(attr, "invalid image")
             end
             img = nil
             GC.start
