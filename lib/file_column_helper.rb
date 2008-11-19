@@ -54,26 +54,16 @@ module FileColumnHelper
   # If there is currently no uploaded file stored in the object's column this method will
   # return +nil+.
   def url_for_file_column(object, method, options=nil)
-    case object
-    when String, Symbol
-      object = instance_variable_get("@#{object.to_s}")
-    end
+    object = instance_variable_get("@#{object}") if [String, Symbol].any? { |k| object.is_a? k }
 
     # parse options
-    subdir = nil
-    absolute = false
-    if options
-      case options
-      when Hash
-        subdir = options[:subdir]
-        absolute = options[:absolute]
-      when String, Symbol
-        subdir = options
-      end
+    subdir, absolute = case options
+    when Hash           : [options[:subdir], options[:absolute]]
+    when String, Symbol : [options, false]
+    else                  [nil, false]
     end
 
-    relative_path = object.send("#{method}_relative_path", subdir)
-    return nil unless relative_path
+    return nil unless relative_path = object.send("#{method}_relative_path", subdir)
 
     url = ""
     url << request.relative_url_root.to_s if absolute
@@ -133,18 +123,9 @@ module FileColumnHelper
   # If there is currently no image uploaded, or there is a problem while loading
   # the image this method will return +nil+.
   def url_for_image_column(object, method, options=nil)
-    case object
-    when String, Symbol
-      object = instance_variable_get("@#{object.to_s}")
-    end
-    subdir = nil
-    if options
-      subdir = object.send("#{method}_state").create_magick_version_if_needed(options)
-    end
-    if subdir.nil?
-      nil
-    else
-      url_for_file_column(object, method, subdir)
-    end
+    object = instance_variable_get("@#{object}") if [String, Symbol].any? { |k| object.is_a? k }
+    subdir = object.send("#{method}_state").create_magick_version_if_needed(options) if options
+    return if subdir.nil?
+    url_for_file_column(object, method, subdir)
   end
 end
