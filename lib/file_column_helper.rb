@@ -63,13 +63,9 @@ module FileColumnHelper
     else                  [nil, false]
     end
 
-    return nil unless relative_path = object.send("#{method}_relative_path", subdir)
-
-    url = ""
-    url << request.relative_url_root.to_s if absolute
-    url << "/"
-    url << object.send("#{method}_options")[:base_url] << "/"
-    url << relative_path
+    return unless url = object.send("#{method}_url", subdir)
+    url.insert 0, request.relative_url_root.to_s.dup if absolute
+    url
   end
 
   # Same as +url_for_file_colum+ but allows you to access different versions
