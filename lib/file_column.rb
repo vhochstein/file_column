@@ -641,6 +641,11 @@ module FileColumn # :nodoc:
       define_method "#{attr}_relative_dir" do
         send(state_method).relative_dir
       end
+      
+      define_method "#{attr}_url" do |*args|
+        return unless path = send("#{attr}_relative_path", *args)
+        "/" << send("#{attr}_options")[:base_url] << "/" << path
+      end
 
       define_method "#{attr}=" do |file|
         state = send(state_method).assign(file)
