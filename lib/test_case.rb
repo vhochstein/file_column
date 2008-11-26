@@ -113,6 +113,10 @@ class Test::Unit::TestCase
     end
     return t
   end
+  
+  def dir_for_id(id)
+    File.join(*("%08d" % id).scan(/..../))
+  end
 end
 
 # If we are running in the "test" environment, we overwrite the default
