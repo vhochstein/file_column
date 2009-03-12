@@ -25,4 +25,3 @@ module FileColumn
     end
   end
 end
-

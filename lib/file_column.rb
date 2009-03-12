@@ -717,5 +717,3 @@ module FileColumn # :nodoc:
   end
 
 end
-
-
