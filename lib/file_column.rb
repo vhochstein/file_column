@@ -349,7 +349,7 @@ module FileColumn # :nodoc:
       @dir = File.join(store_dir, relative_path_prefix)
       @filename = @instance[@attr]
       @filename = nil if @filename.empty?
-			FileUtils.mkpath(File.dirname(@dir)) unless File.exists?(File.dirname(@dir))
+      FileUtils.mkpath(File.dirname(@dir)) unless File.exists?(File.dirname(@dir))
     end
 
     def move_from(local_dir, just_uploaded)
