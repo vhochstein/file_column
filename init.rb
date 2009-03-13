@@ -10,3 +10,4 @@ require 'validations'
 ActiveRecord::Base.send(:include, FileColumn)
 ActionView::Base.send(:include, FileColumnHelper)
 ActiveRecord::Base.send(:include, FileColumn::Validations)
+I18n.load_path += Dir[ File.join(File.dirname(__FILE__), 'lib', 'locales', '*.{rb,yml}') ]

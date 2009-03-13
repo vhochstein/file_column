@@ -38,7 +38,7 @@ module FileColumn
           unless value.blank?
             mime_extensions = record.send("#{attr}_options")[:mime_extensions]
             extensions = options[:in].map{|o| mime_extensions[o] || o }
-            record.errors.add attr, "is not a valid format." unless extensions.include?(value.scan(EXT_REGEXP).flatten.first)
+            record.errors.add attr, I18n.t("file_column.validations.image.invalid_format") unless extensions.include?(value.scan(EXT_REGEXP).flatten.first)
           end
         end
 
@@ -63,8 +63,8 @@ module FileColumn
         validates_each(attrs, options) do |record, attr, value|
           unless value.blank?
             size = File.size(value)
-            record.errors.add attr, "is smaller than the allowed size range." if size < options[:in].first
-            record.errors.add attr, "is larger than the allowed size range." if size > options[:in].last
+            record.errors.add attr, I18n.t("file_column.validations.image.too_small") if size < options[:in].first
+            record.errors.add attr, I18n.t("file_column.validations.image.too_large") if size > options[:in].last
           end
         end
 
@@ -101,12 +101,12 @@ module FileColumn
           unless value.blank?
             begin
               img = ::Magick::Image::read(value).first
-              record.errors.add(attr, "is too narrow, must be at least #{minimums[0]}px.") if minimums && img.columns < minimums[0]
-              record.errors.add(attr, "is too short, must be at least #{minimums[1]}px.")  if minimums && img.rows    < minimums[1]
-              record.errors.add(attr, "is too wide, must be at most #{maximums[0]}px.")    if maximums && img.columns > maximums[0]
-              record.errors.add(attr, "is too tall, must be at most #{maximums[1]}px.")    if maximums && img.rows    > maximums[1]
+              record.errors.add(attr, I18n.t("file_column.validations.image.too_narrow", :length => minimums[0])) if minimums && img.columns < minimums[0]
+              record.errors.add(attr, I18n.t("file_column.validations.image.too_short" , :length => minimums[1])) if minimums && img.rows    < minimums[1]
+              record.errors.add(attr, I18n.t("file_column.validations.image.too_wide"  , :length => maximums[0])) if maximums && img.columns > maximums[0]
+              record.errors.add(attr, I18n.t("file_column.validations.image.too_tall"  , :length => maximums[1])) if maximums && img.rows    > maximums[1]
             rescue ::Magick::ImageMagickError
-              record.errors.add(attr, "invalid image")
+              record.errors.add(attr, I18n.t("file_column.validations.image.ivalid"))
             end
             img = nil
             GC.start
