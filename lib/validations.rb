@@ -38,7 +38,7 @@ module FileColumn
           unless value.blank?
             mime_extensions = record.send("#{attr}_options")[:mime_extensions]
             extensions = options[:in].map{|o| mime_extensions[o] || o }
-            record.errors.add attr, "is not a valid format." unless extensions.include?(value.scan(EXT_REGEXP).flatten.first)
+            record.errors.add attr, I18n.t("file_column.validations.image.invalid_format") unless extensions.include?(value.scan(EXT_REGEXP).flatten.first)
           end
         end
 
@@ -63,8 +63,8 @@ module FileColumn
         validates_each(attrs, options) do |record, attr, value|
           unless value.blank?
             size = File.size(value)
-            record.errors.add attr, "is smaller than the allowed size range." if size < options[:in].first
-            record.errors.add attr, "is larger than the allowed size range." if size > options[:in].last
+            record.errors.add attr, I18n.t("file_column.validations.image.too_small") if size < options[:in].first
+            record.errors.add attr, I18n.t("file_column.validations.image.too_large") if size > options[:in].last
           end
         end
 
@@ -87,10 +87,13 @@ module FileColumn
       # This validation requires RMagick to be installed on your system
       # to check the image's size.
       def validates_image_size(*attrs)
-        options = attrs.pop if attrs.last.is_a?Hash
-        raise ArgumentError, "Please include a :min option." if !options || !options[:min]
-        minimums = options[:min].scan(IMAGE_SIZE_REGEXP).first.collect{|n| n.to_i} rescue []
-        raise ArgumentError, "Invalid value for option :min (should be 'XXxYY')" unless minimums.size == 2
+        options = attrs.pop if attrs.last.is_a? Hash
+        raise ArgumentError, "Please include a :max, :min or :fix option." if ([:max, :min, :fix] & (options||{}).keys).empty?
+        options[:max] = options[:min] = options[:fix] if options[:fix]
+        minimums = options[:min].scan(IMAGE_SIZE_REGEXP).first.collect{ |n| n.to_i } rescue nil
+        raise ArgumentError, "Invalid value for option :min (should be 'XXxYY')" unless minimums.size == 2 if minimums.is_a? Array
+        maximums = options[:max].scan(IMAGE_SIZE_REGEXP).first.collect{ |n| n.to_i } rescue nil
+        raise ArgumentError, "Invalid value for option :max (should be 'XXxYY')" unless maximums.size == 2 if maximums.is_a? Array
 
         require 'RMagick'
 
@@ -98,9 +101,12 @@ module FileColumn
           unless value.blank?
             begin
               img = ::Magick::Image::read(value).first
-              record.errors.add('image', "is too small, must be at least #{minimums[0]}x#{minimums[1]}") if ( img.rows < minimums[1] || img.columns < minimums[0] )
+              record.errors.add(attr, I18n.t("file_column.validations.image.too_narrow", :length => minimums[0])) if minimums && img.columns < minimums[0]
+              record.errors.add(attr, I18n.t("file_column.validations.image.too_short" , :length => minimums[1])) if minimums && img.rows    < minimums[1]
+              record.errors.add(attr, I18n.t("file_column.validations.image.too_wide"  , :length => maximums[0])) if maximums && img.columns > maximums[0]
+              record.errors.add(attr, I18n.t("file_column.validations.image.too_tall"  , :length => maximums[1])) if maximums && img.rows    > maximums[1]
             rescue ::Magick::ImageMagickError
-              record.errors.add('image', "invalid image")
+              record.errors.add(attr, I18n.t("file_column.validations.image.ivalid"))
             end
             img = nil
             GC.start

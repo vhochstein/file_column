@@ -43,33 +43,19 @@ module FileColumn # :nodoc:
 
 
     def assign(file)
-      if file.is_a? File
-        # this did not come in via a CGI request. However,
-        # assigning files directly may be useful, so we
-        # make just this file object similar enough to an uploaded
-        # file that we can handle it.
-        file.extend FileColumn::FileCompat
-      end
+      # this did not come in via a CGI request. However, assigning files directly may be useful, so we
+      # make just this file object similar enough to an uploaded file that we can handle it.
+      file.extend FileColumn::FileCompat if file.is_a? File
 
-      if file.nil?
-        delete
-      else
-        if file.size == 0
-          # user did not submit a file, so we
-          # can simply ignore this
-          self
-        else
-          if file.is_a?(String)
-            # if file is a non-empty string it is most probably
-            # the filename and the user forgot to set the encoding
-            # to multipart/form-data. Since we would raise an exception
-            # because of the missing "original_filename" method anyways,
-            # we raise a more meaningful exception rightaway.
-            raise TypeError.new("Do not know how to handle a string with value '#{file}' that was passed to a file_column. Check if the form's encoding has been set to 'multipart/form-data'.")
-          end
-          upload(file)
-        end
-      end
+      # user did not submit a file, so we can simply ignore this
+      return self if file.nil? || file.size == 0
+
+      # if file is a non-empty string it is most probably the filename and the user forgot to set the encoding
+      # to multipart/form-data. Since we would raise an exception because of the missing "original_filename"
+      # method anyways, we raise a more meaningful exception rightaway.
+      raise TypeError.new("Do not know how to handle a string with value '#{file}' that was passed to a file_column. Check if the form's encoding has been set to 'multipart/form-data'.") if file.is_a?(String)
+
+      upload(file)
     end
 
     def just_uploaded?
