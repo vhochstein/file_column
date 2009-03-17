@@ -121,7 +121,6 @@ module FileColumnHelper
   def url_for_image_column(object, method, options=nil)
     object = instance_variable_get("@#{object}") if [String, Symbol].any? { |k| object.is_a? k }
     subdir = object.send("#{method}_state").create_magick_version_if_needed(options) if options
-    return if subdir.nil?
     url_for_file_column(object, method, subdir)
   end
 end
